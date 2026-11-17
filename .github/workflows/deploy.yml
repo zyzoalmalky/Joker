@@ -6,10 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,16 +27,23 @@ jobs:
       - name: Apply online reliability fixes
         run: python "$GITHUB_WORKSPACE/.github/scripts/patch_online.py"
 
+      - name: Hand off host to a late joiner
+        run: python -c "from pathlib import Path; p=Path('extracted/JOKER_V4_2/worker/index.js'); s=p.read_text(encoding='utf-8'); old='this.room.players.push(p);if(!this.room.hostId)this.room.hostId=p.id;'; new='this.room.players.push(p);if(!this.room.hostId||!this.room.players.some(x=>x.id===this.room.hostId&&x.connected))this.room.hostId=p.id;'; assert old in s; p.write_text(s.replace(old,new,1),encoding='utf-8')"
+
+      - name: Add late host regression test
+        run: cp "$GITHUB_WORKSPACE/.github/scripts/late_host.test.js" tests/late_host.test.js
+        working-directory: extracted/JOKER_V4_2
+
       - name: Install dependencies
-        run: npm install
+        run:  pm install
         working-directory: extracted/JOKER_V4_2
 
       - name: Test game and room logic
-        run: npm test
+        run:  pm test
         working-directory: extracted/JOKER_V4_2
 
       - name: Deploy to Cloudflare
-        run: npx wrangler deploy --config wrangler.toml
+        run:  px wrangler deploy --config wrangler.toml
         working-directory: extracted/JOKER_V4_2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
