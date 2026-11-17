@@ -1,0 +1,16 @@
+name: Export JOKER source for inspection
+on:
+  push:
+    branches: [main]
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -q JOKER_V4_ONLINE_DEPLOY.zip -d extracted
+      - uses: actions/upload-artifact@v4
+        with:
+          name: joker-source
+          path: extracted/JOKER_V4_2/
+          if-no-files-found: error
+          retention-days: 1
